@@ -28,8 +28,29 @@ class DummyAgent(Agent):
         super().__init__(mdp_info, policy, backend=backend)
 
     def fit(self, dataset):
-
+        print(f'\t* samples={len(dataset)}, episodes={len(dataset.episodes_length)}')
         assert len(dataset.episodes_length) == 20 or len(dataset) == 150
+
+
+class DummyEpisodicAgent(Agent):
+    def __init__(self, mdp_info, backend):
+        self._backend = backend
+        policy = DummyPolicy(mdp_info.action_space.shape, backend)
+        super().__init__(mdp_info, policy, is_episodic=True, backend=backend)
+        self._counter = 0
+
+    def fit(self, dataset):
+        assert len(dataset.theta_list) == 5
+
+    def episode_start_vectorized(self, initial_states, episode_info, n_envs):
+        current_count = self._counter
+        self._counter += 1
+        if self._backend == 'torch':
+            return None, torch.ones(n_envs, 2) * current_count
+        elif self._backend == 'numpy':
+            return None, np.ones((n_envs, 2)) * current_count
+        else:
+            raise NotImplementedError
 
 
 class DummyVecEnv(VectorizedEnvironment):
@@ -97,21 +118,44 @@ def run_exp(env_backend, agent_backend):
     print('- learn n_steps=10000 n_episodes_per_fit=20')
     core.learn(n_steps=10000, n_episodes_per_fit=20)
 
-    # print('- learn n_episode=100 n_episodes_per_fit=150')
+    # print('- learn n_episode=100 n_episodes_per_fit=150') # FIXME add proper support for this configuration
     # core.learn(n_episodes=100, n_steps_per_fit=150)
 
+def run_exp_episodic(env_backend, agent_backend):
+    torch.random.manual_seed(42)
 
-def test_vectorized_env_():
+    env = DummyVecEnv(env_backend)
+    agent = DummyEpisodicAgent(env.info, agent_backend)
+
+    core = VectorCore(agent, env)
+
+    print('- evaluate n_episodes=20')
+    dataset = core.evaluate(n_episodes=20)
+    assert len(dataset.episodes_length) == 20
+    assert len(dataset.theta_list) == 20
+
+    print('- learn n_episodes=25 n_episodes_per_fit=5')
+    core.learn(n_episodes=25, n_episodes_per_fit=5)
+    
+
+def test_vectorized_core():
     print('# CPU test')
     run_exp(env_backend='torch', agent_backend='torch')
     run_exp(env_backend='torch', agent_backend='numpy')
     run_exp(env_backend='numpy', agent_backend='torch')
     run_exp(env_backend='numpy', agent_backend='numpy')
 
+    run_exp_episodic(env_backend='torch', agent_backend='torch')
+    run_exp_episodic(env_backend='torch', agent_backend='numpy')
+    run_exp_episodic(env_backend='numpy', agent_backend='torch')
+    run_exp_episodic(env_backend='numpy', agent_backend='numpy')
+
     if torch.cuda.is_available():
         print('# Testing also cuda')
         TorchUtils.set_default_device('cuda')
         run_exp(env_backend='torch', agent_backend='torch')
         run_exp(env_backend='torch', agent_backend='numpy')
+        run_exp_episodic(env_backend='torch', agent_backend='torch')
+        run_exp_episodic(env_backend='torch', agent_backend='numpy')
         TorchUtils.set_default_device('cpu')
 
