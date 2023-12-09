@@ -65,18 +65,17 @@ def experiment(
 
     agent = alg(mdp.info, policy, **alg_params)
 
-    dataset_callback = CollectDataset()
-    core = Core(agent, mdp, callbacks_fit=[dataset_callback])
+    core = Core(agent, mdp)
 
-    init_dataset = core.evaluate(n_episodes=n_eval_episodes, render=False)
-    R = np.mean(init_dataset.undiscounted_return)
+    dataset = core.evaluate(n_episodes=n_eval_episodes, render=False)
+    R = np.mean(dataset.undiscounted_return)
 
     logger.epoch_info(0, R=R)
 
     for it in trange(n_epochs, leave=False):
         core.learn(n_steps=n_steps, n_steps_per_fit=n_steps_per_fit)        
-        R = np.mean(dataset_callback.get().undiscounted_return)
-        dataset_callback.clean()
+        dataset = core.evaluate(n_episodes=n_eval_episodes, render=False)
+        R = np.mean(dataset.undiscounted_return)
 
         logger.epoch_info(it + 1, R=R)
 
