@@ -8,6 +8,7 @@ from tqdm import trange
 
 from mushroom_rl.core import Core, Logger
 from mushroom_rl import environments as envs
+from mushroom_rl.utils.callbacks import CollectDataset
 from mushroom_rl.algorithms.actor_critic import TRPO, PPO
 
 from mushroom_rl.policy import GaussianTorchPolicy
@@ -22,37 +23,34 @@ class Network(nn.Module):
 
         self._h1 = nn.Linear(n_input, n_features)
         self._h2 = nn.Linear(n_features, n_features)
-        self._h3 = nn.Linear(n_features, n_features)
-        self._h4 = nn.Linear(n_features, n_output)
+        self._h3 = nn.Linear(n_features, n_output)
 
         nn.init.xavier_uniform_(self._h1.weight, gain=nn.init.calculate_gain("relu"))
         nn.init.xavier_uniform_(self._h2.weight, gain=nn.init.calculate_gain("relu"))
-        nn.init.xavier_uniform_(self._h3.weight, gain=nn.init.calculate_gain("relu"))
-        nn.init.xavier_uniform_(self._h4.weight, gain=nn.init.calculate_gain("linear"))
+        nn.init.xavier_uniform_(self._h3.weight, gain=nn.init.calculate_gain("linear"))
 
     def forward(self, state, **kwargs):
         features1 = F.relu(self._h1(torch.squeeze(state, 1).float()))
         features2 = F.relu(self._h2(features1))
-        features3 = F.relu(self._h3(features2))
-        a = self._h4(features3)
+        a = self._h3(features2)
 
         return a
 
 
 def experiment(
-    alg, n_epochs, n_steps, n_steps_per_fit, n_episodes_test, alg_params, policy_params
+    alg, n_epochs, n_steps, n_steps_per_fit, alg_params, policy_params
 ):
     logger = Logger(alg.__name__, results_dir=None)
     logger.strong_line()
     logger.info("Experiment Algorithm: " + alg.__name__)
 
-    mdp = envs.PsocPendulum()
+    mdp = envs.PSOCPendulum()
 
     critic_params = dict(
         network=Network,
         optimizer={"class": optim.Adam, "params": {"lr": 3e-4}},
         loss=F.mse_loss,
-        n_features=32,
+        n_features=256,
         batch_size=64,
         input_shape=mdp.info.observation_space.shape,
         output_shape=(1,),
@@ -68,37 +66,23 @@ def experiment(
     alg_params["critic_params"] = critic_params
 
     agent = alg(mdp.info, policy, **alg_params)
-    # agent.set_logger(logger)
 
-    core = Core(agent, mdp)
-
-    dataset = core.evaluate(n_episodes=n_episodes_test, render=False)
-
-    J = np.mean(dataset.discounted_return)
-    R = np.mean(dataset.undiscounted_return)
-    E = agent.policy.entropy()
-
-    logger.epoch_info(0, J=J, R=R, entropy=E)
+    dataset_callback = CollectDataset()
+    core = Core(agent, mdp, callbacks_fit=[dataset_callback])
 
     for it in trange(n_epochs, leave=False):
         core.learn(n_steps=n_steps, n_steps_per_fit=n_steps_per_fit)
-        dataset = core.evaluate(n_episodes=n_episodes_test, render=False)
+        
+        R = np.mean(dataset_callback.get().undiscounted_return)
+        dataset_callback.clean()
 
-        J = np.mean(dataset.discounted_return)
-        R = np.mean(dataset.undiscounted_return)
-        E = agent.policy.entropy()
-
-        logger.epoch_info(it + 1, J=J, R=R, entropy=E)
-
-    # logger.info('Press a button to visualize')
-    # input()
-    # core.evaluate(n_episodes=5, render=True)
+        logger.epoch_info(it + 1, R=R)
 
 
 if __name__ == "__main__":
     max_kl = 0.015
 
-    policy_params = dict(std_0=1.0, n_features=128)
+    policy_params = dict(std_0=1.0, n_features=256)
 
     ppo_params = dict(
         actor_optimizer={"class": optim.Adam, "params": {"lr": 3e-4}},
@@ -126,7 +110,6 @@ if __name__ == "__main__":
             n_epochs=10,
             n_steps=30000,
             n_steps_per_fit=3000,
-            n_episodes_test=25,
             alg_params=alg_params,
             policy_params=policy_params,
         )

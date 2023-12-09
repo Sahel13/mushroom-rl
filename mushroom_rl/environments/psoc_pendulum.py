@@ -21,46 +21,52 @@ def reward_fn(state, action):
     goal = np.array([np.pi, 0.0])
     Q = np.diag(np.array([1e1, 1e-1]))
     R = 1e-3
+    eta = 0.5
 
-    cost = (state - goal).T @ Q @ (state - goal)
-    cost += action**2 * R
-    return -0.5 * cost
+    q = normalize_angle(state[0])
+    dq = state[1]
+
+    _state = np.hstack((q, dq))
+    cost = (_state - goal).T @ Q @ (_state - goal)
+    cost += R * action**2 
+    return - 0.5 * eta * cost
 
 
-class PsocPendulum(Environment):
+def observe_fn(state):
+    sin_q = np.sin(state[0])
+    cos_q = np.cos(state[0])
+    dq = state[1]
+    return np.hstack((sin_q, cos_q, dq))
+
+
+class PSOCPendulum(Environment):
     def __init__(
-        self, max_action=5.0, dt=0.05, horizon=100, discount_factor=1.0, seed=1
+        self, max_action=5.0, dt=0.05, horizon=100, gamma=1.0, seed=1
     ):
         self._state = None
         self.max_action = max_action
         self.np_generator = np.random.default_rng(seed)
         self.state_dim = 2
 
-        # MDP properties
-        observation_space = spaces.Box(-np.inf, np.inf, shape=(self.state_dim,))
+        observation_space = spaces.Box(-np.inf, np.inf, shape=(3,))
         action_space = spaces.Box(-max_action, max_action, shape=(1,))
+
         mdp_info = MDPInfo(
-            observation_space, action_space, discount_factor, horizon, dt
+            observation_space, action_space, gamma, horizon, dt
         )
         super().__init__(mdp_info)
 
     def reset(self, state=None):
-        if state is None:
-            # self._state = np.zeros(self.state_dim)
-            rand_angle = self.np_generator.uniform(low=-np.pi / 2, high=np.pi / 2)
-            self._state = np.array([rand_angle, 0.0])
-        else:
-            self._state = state
-            self._state[0] = normalize_angle(self._state[0])
-
-        return self._state, {}
+        self._state = np.zeros((2,))
+        return observe_fn(self._state), {}
 
     def step(self, action):
-        u = self._bound(action[0], -self.max_action, self.max_action)
-        state_deriv = ode(self._state, u.item())
-        self._state += state_deriv * self.info.dt
-        # self._state += self.np_generator.normal(0, 1e-2, size=self.state_dim)
-        self._state[0] = normalize_angle(self._state[0])
+        _action = self._bound(action[0], -self.max_action, self.max_action)
 
-        reward = reward_fn(self._state, u.item())
-        return self._state, reward, False, {}
+        _deriv = ode(self._state, _action.item())
+        self._state += _deriv * self.info.dt
+        self._state += self.np_generator.normal(0, 1e-2, size=self.state_dim)
+
+        reward = reward_fn(self._state, _action.item())
+        obs = observe_fn(self._state)
+        return obs, reward, False, {}
