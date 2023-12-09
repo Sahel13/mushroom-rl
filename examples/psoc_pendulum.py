@@ -32,19 +32,17 @@ class Network(nn.Module):
     def forward(self, state, **kwargs):
         features1 = F.relu(self._h1(torch.squeeze(state, 1).float()))
         features2 = F.relu(self._h2(features1))
-        a = self._h3(features2)
-
-        return a
+        return self._h3(features2)
 
 
 def experiment(
-    alg, n_epochs, n_steps, n_steps_per_fit, alg_params, policy_params
+    alg, n_epochs, n_steps, n_steps_per_fit, n_eval_episodes, alg_params, policy_params
 ):
     logger = Logger(alg.__name__, results_dir=None)
     logger.strong_line()
     logger.info("Experiment Algorithm: " + alg.__name__)
 
-    mdp = envs.PSOCPendulum()
+    mdp = envs.OurPendulum()
 
     critic_params = dict(
         network=Network,
@@ -70,9 +68,13 @@ def experiment(
     dataset_callback = CollectDataset()
     core = Core(agent, mdp, callbacks_fit=[dataset_callback])
 
+    init_dataset = core.evaluate(n_episodes=n_eval_episodes, render=False)
+    R = np.mean(init_dataset.undiscounted_return)
+
+    logger.epoch_info(0, R=R)
+
     for it in trange(n_epochs, leave=False):
-        core.learn(n_steps=n_steps, n_steps_per_fit=n_steps_per_fit)
-        
+        core.learn(n_steps=n_steps, n_steps_per_fit=n_steps_per_fit)        
         R = np.mean(dataset_callback.get().undiscounted_return)
         dataset_callback.clean()
 
@@ -110,6 +112,7 @@ if __name__ == "__main__":
             n_epochs=10,
             n_steps=30000,
             n_steps_per_fit=3000,
+            n_eval_episodes=30,
             alg_params=alg_params,
             policy_params=policy_params,
         )

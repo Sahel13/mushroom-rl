@@ -86,9 +86,9 @@ Segway.register()
 from .ship_steering import ShipSteering
 ShipSteering.register()
 
-# Custom environments
-from .psoc_pendulum import PSOCPendulum
-PSOCPendulum.register()
+# our environments
+from .our_pendulum import OurPendulum
+OurPendulum.register()
 
-from .psoc_cartpole import PsocCartpole
-PsocCartpole.register()
+from .our_cartpole import OurCartpole
+OurCartpole.register()

@@ -39,7 +39,7 @@ def observe_fn(state):
     return np.hstack((sin_q, cos_q, dq))
 
 
-class PSOCPendulum(Environment):
+class OurPendulum(Environment):
     def __init__(
         self, max_action=5.0, dt=0.05, horizon=100, gamma=1.0, seed=1
     ):
@@ -57,7 +57,7 @@ class PSOCPendulum(Environment):
         super().__init__(mdp_info)
 
     def reset(self, state=None):
-        self._state = np.zeros((2,))
+        self._state = np.zeros((self.state_dim,))
         return observe_fn(self._state), {}
 
     def step(self, action):
