@@ -21,7 +21,6 @@ def reward_fn(state, action):
     goal = np.array([np.pi, 0.0])
     Q = np.diag(np.array([1e1, 1e-1]))
     R = 1e-3
-    eta = 0.5
 
     q = normalize_angle(state[0])
     dq = state[1]
@@ -29,7 +28,7 @@ def reward_fn(state, action):
     _state = np.hstack((q, dq))
     cost = (_state - goal).T @ Q @ (_state - goal)
     cost += R * action**2 
-    return - 0.5 * eta * cost
+    return - 0.5 * cost
 
 
 def observe_fn(state):

@@ -38,7 +38,6 @@ def reward_fn(state, action):
     goal = np.array([0.0, np.pi, 0.0, 0.0])
     Q = np.diag(np.array([1e0, 1e1, 1e-1, 1e-1]))
     R = 1e-3
-    eta = 0.5
 
     x = state[0]
     q = normalize_angle(state[1])
@@ -48,7 +47,7 @@ def reward_fn(state, action):
     _state = np.hstack((x, q, dx, dq))
     cost = (_state - goal).T @ Q @ (_state - goal)
     cost += R * action**2 
-    return -0.5 * eta * cost
+    return -0.5 * cost
 
 
 def observe_fn(state):
@@ -85,7 +84,7 @@ class OurCartpole(Environment):
     def step(self, action):
         _action = self._bound(action[0], -self.max_action, self.max_action)
 
-        _deriv = ode(self._state, u.item())
+        _deriv = ode(self._state, _action.item())
         self._state += _deriv * self.info.dt
         self._state += self.np_generator.normal(0, 1e-2, size=self.state_dim)
 

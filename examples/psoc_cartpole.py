@@ -44,7 +44,7 @@ def experiment(
     logger.strong_line()
     logger.info("Experiment Algorithm: " + alg.__name__)
 
-    mdp = envs.OurPendulum(seed=seed)
+    mdp = envs.OurCartpole(seed=seed)
 
     critic_params = dict(
         network=Network,
@@ -85,7 +85,7 @@ def experiment(
         logger.epoch_info(it + 1, R=R)
         reward_list.append(((it + 1) * n_steps, R))
 
-    csv_file = f"{alg_name}_pendulum.csv"
+    csv_file = f"{alg_name}_cartpole.csv"
     if os.path.exists(csv_file):
         df = pd.read_csv(csv_file)
         new_column = pd.DataFrame([reward[1] for reward in reward_list],
@@ -127,8 +127,8 @@ if __name__ == "__main__":
             experiment(
                 alg=alg,
                 alg_name=alg_name,
-                n_epochs=20,
-                n_steps=15_000,
+                n_epochs=10,
+                n_steps=30_000,
                 n_steps_per_fit=3000,
                 n_eval_episodes=30,
                 alg_params=alg_params,
