@@ -78,7 +78,7 @@ def experiment(
     logger.epoch_info(0, R=R)
 
     for it in trange(n_epochs, leave=False):
-        core.learn(n_steps=n_steps, n_steps_per_fit=n_steps_per_fit)        
+        core.learn(n_steps=n_steps, n_steps_per_fit=n_steps_per_fit)
         dataset = core.evaluate(n_episodes=n_eval_episodes, render=False)
         R = np.mean(dataset.undiscounted_return)
 
@@ -100,13 +100,13 @@ def experiment(
 if __name__ == "__main__":
     max_kl = 0.015
 
-    policy_params = dict(std_0=1.0, n_features=256)
+    policy_params = dict(std_0=2.5, n_features=256)
 
     ppo_params = dict(
         actor_optimizer={"class": optim.Adam, "params": {"lr": 3e-4}},
         n_epochs_policy=4,
         batch_size=64,
-        eps_ppo=0.2,
+        eps_ppo=0.1,
         lam=0.95,
     )
 
@@ -123,12 +123,12 @@ if __name__ == "__main__":
     algs_params = [(TRPO, "trpo", trpo_params), (PPO, "ppo", ppo_params)]
 
     for alg, alg_name, alg_params in algs_params:
-        for seed in range(2, 11):
+        for seed in range(1, 11):
             experiment(
                 alg=alg,
                 alg_name=alg_name,
-                n_epochs=10,
-                n_steps=30_000,
+                n_epochs=20,
+                n_steps=15_000,
                 n_steps_per_fit=3000,
                 n_eval_episodes=30,
                 alg_params=alg_params,

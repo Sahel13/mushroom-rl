@@ -92,3 +92,6 @@ OurPendulum.register()
 
 from .our_cartpole import OurCartpole
 OurCartpole.register()
+
+from .our_double_pendulum import OurDoublePendulum
+OurDoublePendulum.register()

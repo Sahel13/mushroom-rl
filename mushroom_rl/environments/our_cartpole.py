@@ -61,7 +61,7 @@ def observe_fn(state):
 
 class OurCartpole(Environment):
     def __init__(
-        self, max_action=50.0, dt=0.05, horizon=100, gamma=1.0, seed=1
+        self, max_action=5.0, dt=0.05, horizon=100, gamma=1.0, seed=1
     ):
         self._state = None
         self.max_action = max_action
@@ -83,6 +83,7 @@ class OurCartpole(Environment):
 
     def step(self, action):
         _action = self._bound(action[0], -self.max_action, self.max_action)
+        _action *= 10.0
 
         _deriv = ode(self._state, _action.item())
         self._state += _deriv * self.info.dt

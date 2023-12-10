@@ -106,7 +106,7 @@ if __name__ == "__main__":
         actor_optimizer={"class": optim.Adam, "params": {"lr": 3e-4}},
         n_epochs_policy=4,
         batch_size=64,
-        eps_ppo=0.2,
+        eps_ppo=0.1,
         lam=0.95,
     )
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     algs_params = [(TRPO, "trpo", trpo_params), (PPO, "ppo", ppo_params)]
 
     for alg, alg_name, alg_params in algs_params:
-        for seed in range(2, 11):
+        for seed in range(1, 11):
             experiment(
                 alg=alg,
                 alg_name=alg_name,
