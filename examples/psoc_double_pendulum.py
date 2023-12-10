@@ -44,7 +44,7 @@ def experiment(
     logger.strong_line()
     logger.info("Experiment Algorithm: " + alg.__name__)
 
-    mdp = envs.OurPendulum(seed=seed)
+    mdp = envs.OurDoublePendulum(seed=seed)
 
     critic_params = dict(
         network=Network,
@@ -53,7 +53,7 @@ def experiment(
         n_features=256,
         batch_size=64,
         input_shape=mdp.info.observation_space.shape,
-        output_shape=(1,),
+        output_shape=(2,),
     )
 
     policy = GaussianTorchPolicy(
@@ -85,7 +85,7 @@ def experiment(
         logger.epoch_info(it + 1, R=R)
         reward_list.append(((it + 1) * n_steps, R))
 
-    csv_file = f"results/{alg_name}_pendulum.csv"
+    csv_file = f"results/{alg_name}_double_pendulum.csv"
     if os.path.exists(csv_file):
         df = pd.read_csv(csv_file)
         new_column = pd.DataFrame([reward[1] for reward in reward_list],
@@ -100,7 +100,7 @@ def experiment(
 if __name__ == "__main__":
     max_kl = 0.015
 
-    policy_params = dict(std_0=1.0, n_features=256)
+    policy_params = dict(std_0=2.5, n_features=256)
 
     ppo_params = dict(
         actor_optimizer={"class": optim.Adam, "params": {"lr": 3e-4}},

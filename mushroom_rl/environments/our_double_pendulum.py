@@ -83,7 +83,7 @@ def observe_fn(state):
 
 
 class OurDoublePendulum(Environment):
-    def __init__(self, max_action=25.0, dt=0.05, horizon=100, gamma=1.0, seed=1):
+    def __init__(self, max_action=5.0, dt=0.05, horizon=100, gamma=1.0, seed=1):
         self._state = None
         self.max_action = max_action
         self.np_generator = np.random.default_rng(seed)
@@ -101,6 +101,7 @@ class OurDoublePendulum(Environment):
 
     def step(self, action):
         _action = self._bound(action, -self.max_action, self.max_action)
+        _action *= 5.0
 
         _deriv = ode(self._state, _action)
         self._state += _deriv * self.info.dt

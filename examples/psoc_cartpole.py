@@ -85,7 +85,7 @@ def experiment(
         logger.epoch_info(it + 1, R=R)
         reward_list.append(((it + 1) * n_steps, R))
 
-    csv_file = f"{alg_name}_cartpole.csv"
+    csv_file = f"results/{alg_name}_cartpole.csv"
     if os.path.exists(csv_file):
         df = pd.read_csv(csv_file)
         new_column = pd.DataFrame([reward[1] for reward in reward_list],
