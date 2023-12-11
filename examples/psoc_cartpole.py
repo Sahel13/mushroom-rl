@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     trpo_params = dict(
         ent_coeff=0.0,
-        max_kl=0.01,
+        max_kl=0.005,
         lam=0.95,
         n_epochs_line_search=10,
         n_epochs_cg=100,

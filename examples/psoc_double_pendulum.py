@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     trpo_params = dict(
         ent_coeff=0.0,
-        max_kl=0.01,
+        max_kl=0.005,
         lam=0.95,
         n_epochs_line_search=10,
         n_epochs_cg=100,
@@ -127,7 +127,7 @@ if __name__ == "__main__":
             experiment(
                 alg=alg,
                 alg_name=alg_name,
-                n_epochs=20,
+                n_epochs=60,
                 n_steps=15_000,
                 n_steps_per_fit=3000,
                 n_eval_episodes=30,
